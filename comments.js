@@ -1,15 +1,37 @@
-// create web server
-var http = require('http');
+// Create web server
 
-// create web server object
-var server = http.createServer(function(req, res) {
-    // write http header
-    res.writeHead(200, {
-        'Content-Type': 'text/plain'
-    });
-    // write message and signal communication is complete
-    res.end('Hello World\n');
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const { randomBytes } = require('crypto');
+
+const app = express();
+app.use(bodyParser.json());
+app.use(cors());
+
+// In-memory data store
+const commentsByPostId = {};
+
+// GET /posts/:id/comments
+app.get('/posts/:id/comments', (req, res) => {
+  res.send(commentsByPostId[req.params.id] || []);
 });
 
-// start listening on port 3000
-server.listen(3000, '
+// POST /posts/:id/comments
+app.post('/posts/:id/comments', (req, res) => {
+  const commentId = randomBytes(4).toString('hex');
+  const { content } = req.body;
+
+  // Add comment to post
+  const comments = commentsByPostId[req.params.id] || [];
+  comments.push({ id: commentId, content });
+  commentsByPostId[req.params.id] = comments;
+
+  // Send comment back
+  res.status(201).send(comments);
+});
+
+// Start server
+app.listen(4001, () => {
+  console.log('Listening on port 4001');
+});
